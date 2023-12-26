@@ -1,6 +1,8 @@
-from classes import *
+from classes.Token import Token
+from classes.Tokens import Tokens
+from classes.AddressMonitor import AddressMonitor
 from configparser import ConfigParser
-
+import pandas as pd
 
 class TestToken:
 
@@ -21,8 +23,8 @@ class TestToken:
             "decimals": 18, 
             "minted": "21000000.000000000000000000", 
             "mint_progress": "1.000000", 
-            "transactions": 227603, 
-            "holders": 13711, 
+            "transactions": 227603,     # not fixed
+            "holders": 13711,           # not fixed
             "deployer": "bc1pxaneaf3w4d27hl2y93fuft2xk6m4u3wc4rafevc6slgd7f5tq2dqyfgy06", 
             "deploy_time": 1678248991
         }
@@ -41,8 +43,8 @@ class TestToken:
             "decimals": 18, 
             "minted": "1000000000000.000000000000000000", 
             "mint_progress": "1.000000", 
-            "transactions": 1171647, 
-            "holders": 12134, 
+            "transactions": 1171647,    # not fixed
+            "holders": 12134,           # not fixed
             "deployer": "bc1p9g0r0sw547dknyhkzdu8rhg58455c3ruekkcpckc9rverz4zrjvquc6nxg", 
             "deploy_time": 1678468314
         }
@@ -72,7 +74,7 @@ class TestToken:
         assert len(floor_listing) == 4
         assert rats.floor_listing == floor_listing
 
-    def test_get_trade_histroy(self):
+    def test_get_trade_history(self):
         ordi = Token("ordi")
         trade_history = ordi.get_trade_history(
             self.okx_api_key,
@@ -127,3 +129,75 @@ class TestToken:
         for key, value in eight_loaded.floor_listing.items():
             assert eight.floor_listing[key] == value
         assert eight_loaded.trade_history.shape == eight.trade_history.shape
+
+    def test_get_top_20_holder(self):
+        ordi = Token("ordi")
+        ordi.get_top_20_holders()
+        assert type(ordi.top_20_holders) == pd.DataFrame
+        assert ordi.top_20_holders.shape == (20, 5)
+        assert ordi.top_20_holders.columns.tolist() == [
+            "tick",
+            "address",
+            "overall_balance",
+            "transferable_balance",
+            "available_balance"
+        ]
+        assert ordi.top_20_holders.iloc[-1]["overall_balance"] > 0
+        
+        eight = Token("8888")
+        eight.get_top_20_holders()
+        assert type(eight.top_20_holders) == pd.DataFrame
+        assert eight.top_20_holders.shape == (20, 5)
+        assert eight.top_20_holders.columns.tolist() == [
+            "tick",
+            "address",
+            "overall_balance",
+            "transferable_balance",
+            "available_balance"
+        ]
+        assert eight.top_20_holders.iloc[-1]["overall_balance"] > 0
+
+class TestTokens:
+
+    def test_initialize(self):
+        tick_list = ["ordi", "8888"]
+        tokens = Tokens(tick_list)
+        assert type(tokens.tokens) == dict
+        assert len(tokens.tokens) == 2
+        for token in tokens.tokens.values():
+            assert type(token) == Token
+            assert token.tick in ["ordi", "8888"]
+
+    def test_add_token(self):
+        tick_list = ["ordi", "8888"]
+        tokens = Tokens(tick_list)
+        assert len(tokens.tokens) == 2
+        tokens.add_token("rats")
+        assert len(tokens.tokens) == 3
+
+    def test_save_tokens(self):
+        tick_list = ["ordi", "8888"]
+        tokens = Tokens(tick_list)
+        tokens.save_tokens()
+        tokens_loaded = Tokens(tick_list, load=True)
+        for tick, token in tokens_loaded.tokens.items():
+            assert tokens.tokens[tick].holders == token.holders
+            assert tokens.tokens[tick].transactions == token.transactions
+
+class TestAddressMonitor:
+
+    def test_get_activity(self):
+        address = "bc1qhuv3dhpnm0wktasd3v0kt6e4aqfqsd0uhfdu7d"
+        monitor = AddressMonitor(address)
+        monitor.get_activity(n_activity=300)
+        assert type(monitor.activity) == dict
+        assert len(monitor.activity) > 0
+        for value in monitor.activity.values():
+            assert type(value) == pd.DataFrame
+            assert len(value) > 0
+
+        monitor.get_activity(tick="sats", n_activity=300)
+        assert type(monitor.activity) == dict
+        assert len(monitor.activity) == 1
+        assert type(monitor.activity["sats"]) == pd.DataFrame
+        assert len(monitor.activity["sats"]) == 300
