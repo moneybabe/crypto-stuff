@@ -6,31 +6,42 @@ import base64
 from datetime import datetime
 import json
 import pickle
+import os
 
 class Token:
+    '''
+    This is a class that can retrive the token data (basic token info, floor 
+    listing, or trade histroy) either by loading from a saved pickle file or by 
+    making a request to the GeniiData and Okx APIs.
 
+    Then, it can save the token data to a pickle file for later use.
+
+    It has 5 methods: 
+        - get_token_info 
+        - get_floor_listing
+        - get_trade_history
+        - save_token
+        - load_token
+    '''
     def __init__(self, tick: str, load: bool = False):
         self.__okx_base_url = "https://www.okx.com"
+        self.__genii_base_url = "https://api.geniidata.com"
         self.tick = tick
         self.get_token_info()
         if load:
             self.load_token()
 
     def get_token_info(self) -> dict:
-        url = "https://api.geniidata.com/api/1/brc20/tickinfo/" + self.tick
+        request_path = "/api/1/brc20/tickinfo/" + self.tick
+        url = self.__genii_base_url + request_path
         headers = {
             "accept": "application/json",
             "api-key": "142cf1b0-1ca7-11ee-bb5e-9d74c2e854ac"
         }
         with requests.get(url, headers=headers) as response:
-            try:
-                data = response.json()["data"]
-            except:
-                raise RuntimeError(response.text)
+            data = response.json()["data"]
         
-        for key, value in data.items():
-            setattr(self, key, value)
-
+        self.__dict__.update(data)
         return data
     
     def _sign_okx_request(self, prehash: str, secret_key: str) -> str:
@@ -168,13 +179,23 @@ class Token:
         return trade_history
     
     def save_token(self) -> None:
-        filename = "saved_tokens/" + self.tick + ".pkl"
-        with open(filename, "wb") as file:
+        filename = self.tick + ".pkl"
+        directory = "saved_tokens"
+        os.makedirs(directory, exist_ok=True)
+        file_path = os.path.join(directory, filename)
+        with open(file_path, "wb") as file:
             pickle.dump(self, file)
 
     def load_token(self) -> object:
-        filename = "saved_tokens/" + self.tick + ".pkl"
-        with open(filename, "rb") as file:
-            loaded_object = pickle.load(file)
-            self.__dict__.update(loaded_object.__dict__)
-        return loaded_object
+        filename = self.tick + ".pkl"
+        directory = "saved_tokens"
+        os.makedirs(directory, exist_ok=True)
+        file_path = os.path.join(directory, filename)
+
+        if os.path.exists(file_path):
+            with open(file_path, "rb") as file:
+                loaded_object = pickle.load(file)
+                self.__dict__.update(loaded_object.__dict__)
+                return loaded_object
+        else:
+            print(f"No saved data found for {self.tick}")

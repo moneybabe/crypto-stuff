@@ -108,7 +108,7 @@ class TestToken:
         ordi.save_token()
         ordi_loaded = ordi.load_token()
         for key, value in ordi_loaded.floor_listing.items():
-            assert ordi_loaded.floor_listing[key] == value
+            assert ordi.floor_listing[key] == value
         assert ordi_loaded.trade_history.shape == ordi.trade_history.shape
 
         eight = Token("8888")
@@ -125,5 +125,5 @@ class TestToken:
         eight.save_token()
         eight_loaded = eight.load_token()
         for key, value in eight_loaded.floor_listing.items():
-            assert eight_loaded.floor_listing[key] == value
+            assert eight.floor_listing[key] == value
         assert eight_loaded.trade_history.shape == eight.trade_history.shape
