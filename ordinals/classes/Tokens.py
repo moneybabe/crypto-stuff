@@ -1,4 +1,4 @@
-from classes.Token import Token
+from .Token import Token
 
 class Tokens:
     '''
