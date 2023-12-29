@@ -6,6 +6,7 @@ sys.path.insert(0, parent_dir)
 from configparser import ConfigParser
 import requests
 import time
+from ordinals.classes import AddressMonitor
 
 config = ConfigParser()
 config.read('config.ini')

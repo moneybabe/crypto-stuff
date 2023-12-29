@@ -3,14 +3,18 @@ from classes.Tokens import Tokens
 from classes.AddressMonitor import AddressMonitor
 from configparser import ConfigParser
 import pandas as pd
+import os
 
 class TestToken:
 
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    parent_directory = os.path.dirname(current_directory)
+    config_file_path = os.path.join(parent_directory, "config.ini")
     config = ConfigParser()
-    config.read("config.ini")
-    okx_api_key = config["okx"]["api_key"]
-    okx_secret_key = config["okx"]["secret_key"]
-    okx_password = config["okx"]["password"]
+    config.read(config_file_path)
+    okx_api_key = config["okx_api"]["api_key"]
+    okx_secret_key = config["okx_api"]["secret_key"]
+    okx_password = config["okx_api"]["password"]
 
     def test_get_token_info(self):
         ordi = Token("ordi")
@@ -83,7 +87,6 @@ class TestToken:
         )
         assert type(trade_history) == pd.DataFrame
         assert len(trade_history) > 0
-        assert trade_history.shape[1] == 4
 
         eight = Token("8888")
         trade_history = eight.get_trade_history(
@@ -93,7 +96,6 @@ class TestToken:
         )
         assert type(trade_history) == pd.DataFrame
         assert len(trade_history) > 0 
-        assert trade_history.shape[1] == 4
 
     def test_save_and_load_token(self):
         ordi = Token("ordi")
@@ -190,14 +192,9 @@ class TestAddressMonitor:
         address = "bc1qhuv3dhpnm0wktasd3v0kt6e4aqfqsd0uhfdu7d"
         monitor = AddressMonitor(address)
         monitor.get_activity(n_activity=300)
-        assert type(monitor.activity) == dict
+        assert type(monitor.activity) == pd.DataFrame
         assert len(monitor.activity) > 0
-        for value in monitor.activity.values():
-            assert type(value) == pd.DataFrame
-            assert len(value) > 0
 
         monitor.get_activity(tick="sats", n_activity=300)
-        assert type(monitor.activity) == dict
-        assert len(monitor.activity) == 1
-        assert type(monitor.activity["sats"]) == pd.DataFrame
-        assert len(monitor.activity["sats"]) == 300
+        assert type(monitor.activity) == pd.DataFrame
+        assert len(monitor.activity) == 300

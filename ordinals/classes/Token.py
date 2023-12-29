@@ -185,17 +185,11 @@ class Token:
             with requests.post(url, headers=headers, data=body) as response:
                 query = response.json()["data"]
             cursor = query["cursor"]
-            data = query["data"]
-            data = pd.DataFrame(
-                map(
-                    lambda x: {
-                        "amount": float(x["amount"]),
-                        "unit_price": float(x["unitPrice"]),
-                        "total_price": float(x["price"]),
-                        "time": datetime.fromtimestamp(x["timestamp"])
-                    }, data
-                )
-            )
+            data = pd.DataFrame(query["data"])
+            data["time"] = pd.to_datetime(data["timestamp"], unit="s")
+            cols_to_numeric = ["amount", "unitPrice", "price"]
+            for col in cols_to_numeric:
+                data[col] = pd.to_numeric(data[col])
             trade_history = pd.concat(
                 [trade_history, data], 
                 ignore_index=True
