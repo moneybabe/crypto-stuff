@@ -171,3 +171,12 @@ class TestAddressMonitor:
         monitor.get_activity(tick="sats", n_activity=300)
         assert type(monitor.activity) == pd.DataFrame
         assert len(monitor.activity) == 300
+
+    def test_get_new_activity(self):
+        address = "bc1qhuv3dhpnm0wktasd3v0kt6e4aqfqsd0uhfdu7d"
+        monitor = AddressMonitor(address)
+        monitor.activity = pd.DataFrame([{"block_hash": "foo"}])
+        assert type(monitor.get_new_activity(n_activity=200)) == pd.DataFrame
+        assert type(monitor.activity) == pd.DataFrame
+        assert len(monitor.activity) == 201
+        assert len(monitor.get_new_activity(n_activity=100)) == 0
