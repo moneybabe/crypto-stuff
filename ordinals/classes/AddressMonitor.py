@@ -6,8 +6,9 @@ class AddressMonitor:
     This is a class that helps monitor the ordinals activity of a targeted BTC 
     address.
 
-    It has 1 method:
+    It has 2 methods:
         - get_activity
+        - get_new_activity
     '''
 
     def __init__(self, address: str):

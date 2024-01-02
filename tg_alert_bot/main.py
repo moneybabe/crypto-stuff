@@ -73,9 +73,38 @@ def main():
                         params["text"] = gen_text(address, act, whales_df)
                         requests.get(base_url, params=params)
 
+            print("sleeping for 30s")
             time.sleep(30)
     except:
         params["text"] = "something's wrong"
         requests.get(base_url, params=params)
+
+def test_main():
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config = ConfigParser()
+    config.read(os.path.join(parent_dir, 'config.ini'))
+    api_key = config.get("telegram_api", "api_key")
+    chat_id = config.get("telegram_api", "chat_id")
+    base_url = f"https://api.telegram.org/bot{api_key}/sendMessage"
+
+    params = {
+        "chat_id": chat_id,
+        "text": "gm world"
+    }
+    print(params)
+    
+    whales_df, address_monitors = setup_address_monitors()
+    
+    while True:
+        for address, monitor in address_monitors.items():
+            new_act = monitor.get_new_activity()
+            if len(new_act) > 0:
+                for _, act in new_act.iterrows():
+                    params["text"] = gen_text(address, act, whales_df)
+                    print(params)
+
+            print("sleeping for 30s")
+            time.sleep(30)
+
 
 main()
