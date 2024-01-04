@@ -4,6 +4,7 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parent_dir)
 
 from configparser import ConfigParser
+import traceback
 import requests
 import time
 from datetime import datetime
@@ -108,8 +109,10 @@ def main():
 
             print("sleeping for 30s")
             time.sleep(30)
-    except:
-        params["text"] = "something's wrong"
+    except Exception as e:
+        error = traceback.format_exc()
+        params["text"] = "SOMETHING'S WRONG\n"\
+            f"error: {error}"
         requests.get(base_url, params=params)
 
 def test_main():
