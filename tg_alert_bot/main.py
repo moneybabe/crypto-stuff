@@ -87,11 +87,11 @@ def main():
         "text": "gm world"
     }
     requests.get(base_url, params=params)
+    whales_df, address_monitors = setup_address_monitors()
     
-    try:
-        whales_df, address_monitors = setup_address_monitors()
-        
-        while True:
+    print("bot started")
+    while True:
+        try:
             for address, monitor in address_monitors.items():
                 new_act = monitor.get_new_activity()
                 if len(new_act) > 0:
@@ -106,14 +106,14 @@ def main():
                             okx_password
                         )
                         requests.get(base_url, params=params)
-
-            print("sleeping for 30s")
             time.sleep(30)
-    except Exception as e:
-        error = traceback.format_exc()
-        params["text"] = "SOMETHING'S WRONG\n"\
-            f"error: {error}"
-        requests.get(base_url, params=params)
+        except Exception as e:
+            error_message  = traceback.format_exc()
+            with open('error.txt', 'a') as file:
+                file.write(error_message)
+                file.write("\n\n")
+            params["text"] = "SOMETHING'S WRONG"
+            requests.get(base_url, params=params)
 
 def test_main():
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -138,8 +138,6 @@ def test_main():
                 for _, act in new_act.iterrows():
                     params["text"] = gen_text(address, act, whales_df)
                     print(params)
-
-            print("sleeping for 30s")
             time.sleep(30)
 
 if __name__ == "__main__":
