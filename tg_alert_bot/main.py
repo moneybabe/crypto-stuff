@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, parent_dir)
 
@@ -37,7 +37,7 @@ def gen_text(
         "actual address: {}\n"\
         "whale's related tokens: {}\n"\
         "token: {}\n"\
-        "token floor price:{}\n"\
+        "token floor price: {}sats\n"\
         "event: {}\n"\
         "amount: {}\n"\
         "from_address: {}\n"\
@@ -52,11 +52,11 @@ def gen_text(
     return txt_template.format(
         whales_df.loc[whales_df["address"] == address, "nickname"].iloc[0],
         datetime.fromtimestamp(activity["block_time"]),
-        datetime.now(),
+        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         address,
         whales_df.loc[whales_df["address"] == address, "related_tokens"].iloc[0],
         activity["tick"],
-        token.floor_listing["unit_price"],
+        token.floor_listing["unit_price"] * 1e8,
         activity["event"],
         activity["amount"],
         activity["from_address"],
