@@ -9,6 +9,7 @@ import time
 from datetime import datetime
 from ordinals.classes.AddressMonitor import AddressMonitor
 import pandas as pd
+from ordinals.classes.Token import Token
 
 def setup_address_monitors():
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,19 +23,32 @@ def setup_address_monitors():
         monitor.get_activity(n_activity=100)
     return whales_df, address_monitors
     
-def gen_text(address: str, activity: dict, whales_df: pd.DataFrame) -> str:
-    txt_template = "\
-        NEW ACTIVITY FROM {}\n\
-        event time: {}\n\
-        now time: {}\n\
-        actual address: {}\n\
-        whale's related tokens: {}\n\
-        token: {}\n\
-        event: {}\n\
-        amount: {}\n\
-        from_address: {}\n\
-        to_address: {}\
-        "
+def gen_text(
+        address: str, 
+        activity: dict, 
+        whales_df: pd.DataFrame,
+        okx_api_key: str,
+        okx_secret_key: str,
+        okx_password: str
+    ) -> str:
+    txt_template = "NEW ACTIVITY FROM {}\n"\
+        "event time: {}\n"\
+        "now time: {}\n"\
+        "actual address: {}\n"\
+        "whale's related tokens: {}\n"\
+        "token: {}\n"\
+        "token floor price:{}\n"\
+        "event: {}\n"\
+        "amount: {}\n"\
+        "from_address: {}\n"\
+        "to_address: {}"
+    
+    token = Token(activity["tick"], load=False)
+    token.get_floor_listing(
+        okx_api_key,
+        okx_secret_key,
+        okx_password
+    )
     return txt_template.format(
         whales_df.loc[whales_df["address"] == address, "nickname"].iloc[0],
         datetime.fromtimestamp(activity["block_time"]),
@@ -42,11 +56,19 @@ def gen_text(address: str, activity: dict, whales_df: pd.DataFrame) -> str:
         address,
         whales_df.loc[whales_df["address"] == address, "related_tokens"].iloc[0],
         activity["tick"],
+        token.floor_listing["unit_price"],
         activity["event"],
         activity["amount"],
         activity["from_address"],
         activity["to_address"]
     )
+
+def condense_activity(activity: pd.DataFrame) -> pd.DataFrame:
+    filtered_df = activity[activity['event'] != 'inscribe-transfer']
+    condensed_df = filtered_df.groupby(
+        ['tick', 'block_time', 'event', 'from_address', 'to_address']
+    )['amount'].sum().reset_index()
+    return condensed_df.sort_values(by=['block_time'], ascending=True)
 
 def main():
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -54,6 +76,9 @@ def main():
     config.read(os.path.join(parent_dir, 'config.ini'))
     api_key = config.get("telegram_api", "api_key")
     chat_id = config.get("telegram_api", "chat_id")
+    okx_api_key = config.get("okx_api", "api_key")
+    okx_secret_key = config.get("okx_api", "secret_key")
+    okx_password = config.get("okx_api", "password")
     base_url = f"https://api.telegram.org/bot{api_key}/sendMessage"
 
     params = {
@@ -69,8 +94,16 @@ def main():
             for address, monitor in address_monitors.items():
                 new_act = monitor.get_new_activity()
                 if len(new_act) > 0:
+                    new_act = condense_activity(new_act)
                     for _, act in new_act.iterrows():
-                        params["text"] = gen_text(address, act, whales_df)
+                        params["text"] = gen_text(
+                            address, 
+                            act, 
+                            whales_df,
+                            okx_api_key,
+                            okx_secret_key,
+                            okx_password
+                        )
                         requests.get(base_url, params=params)
 
             print("sleeping for 30s")
@@ -106,5 +139,5 @@ def test_main():
             print("sleeping for 30s")
             time.sleep(30)
 
-
-main()
+if __name__ == "__main__":
+    main()

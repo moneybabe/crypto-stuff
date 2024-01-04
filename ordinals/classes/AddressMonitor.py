@@ -105,5 +105,6 @@ class AddressMonitor:
             indicator=True
         )
         unique_new = merged_df[merged_df['_merge'] == 'left_only'].drop(columns=['_merge'])
-        setattr(self, "activity", merged_df.drop(columns=['_merge']))
+        merged_df = merged_df.drop(columns=['_merge']).head(2000)
+        setattr(self, "activity", merged_df)
         return unique_new

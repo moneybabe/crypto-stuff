@@ -31,12 +31,10 @@ class Token:
     If load=True is passed, it will also run 
         - load_token()
     '''
-    def __init__(self, tick: str, load: bool = True):
+    def __init__(self, tick: str, load: bool = False):
         self.__okx_base_url = "https://www.okx.com"
         self.__genii_base_url = "https://api.geniidata.com"
         self.tick = tick
-        self.get_token_info()
-        self.get_top_20_holders()
         if load:
             self.load_token()
 
@@ -145,13 +143,22 @@ class Token:
         )
 
         with requests.post(url, headers=headers, data=body) as response:
-            data = response.json()["data"]["data"][0]
-        floor_listing = {
-            "amount": float(data["amount"]),
-            "unit_price": float(data["unitPrice"]),
-            "total_price": float(data["price"]),
-            "listing_time": datetime.fromtimestamp(data["listingTime"])
-        }
+            data = response.json()["data"]["data"]
+        if len(data) == 1:
+            data = data[0]
+            floor_listing = {
+                "amount": float(data["amount"]),
+                "unit_price": float(data["unitPrice"]),
+                "total_price": float(data["price"]),
+                "listing_time": datetime.fromtimestamp(data["listingTime"])
+            }
+        else:
+            floor_listing = {
+                "amount": None,
+                "unit_price": None,
+                "total_price": None,
+                "listing_time": None
+            }
         setattr(self, "floor_listing", floor_listing)
         return floor_listing
     
