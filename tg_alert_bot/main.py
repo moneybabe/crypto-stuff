@@ -38,7 +38,7 @@ def gen_text(
         "actual address: {}\n"\
         "whale's related tokens: {}\n"\
         "token: {}\n"\
-        "token floor price: {}sats\n"\
+        "token floor price: {}\n"\
         "event: {}\n"\
         "amount: {}\n"\
         "from_address: {}\n"\
@@ -57,7 +57,8 @@ def gen_text(
         address,
         whales_df.loc[whales_df["address"] == address, "related_tokens"].iloc[0],
         activity["tick"],
-        token.floor_listing["unit_price"] * 1e8,
+        str(token.floor_listing["unit_price"] * 1e8) + "sats" \
+            if token.floor_listing["unit_price"] is not None else None,
         activity["event"],
         activity["amount"],
         activity["from_address"],
